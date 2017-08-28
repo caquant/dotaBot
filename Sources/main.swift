@@ -30,38 +30,49 @@ let HOST = "https://api.opendota.com/api/"
 class Player {
     
     let userName: UserName
-    var message = ""
     
     init(userName user: UserName) {
         userName = user
     }
     
-    func getInfo(completionHandler: @escaping (String) -> Void) {
-        
-        
+    func getInfo(completionHandler: @escaping (Embed) -> Void) {
         Alamofire.request("\(HOST)players/\(userName)").responseJSON { (response) in
             if let json = response.result.value as? [String:Any]{
                 
                 let profile = json["profile"] as! [String: Any]
                 let estimated = json["mmr_estimate"] as! [String: Int]
                 
-                self.message = "Here is some info about \n** \(profile["personaname"] as! String)**"
-                
+                var message = ""
                 if let soloMMR = json["solo_competitive_rank"] as? Int {
-                    self.message.append("\nSolo MMR: **\(soloMMR)**")
+                    message.append("\nSolo MMR: **\(soloMMR)**")
                 }
                 
                 if let partyMMR = json["competitive_rank"] as? Int {
-                    self.message.append("\nParty MMR: **\(partyMMR)**")
+                    message.append("\nParty MMR: **\(partyMMR)**")
                 }
                 
                 if let estimatedMMR = estimated["estimate"] {
-                    self.message.append("\nEstimated Pub MMR: **\(estimatedMMR)**")
+                    message.append("\nEstimated Pub MMR: **\(estimatedMMR)**")
                 }
                 
-                completionHandler(self.message)
+                if let country = profile["loccountrycode"] as? String {
+                    message.append("\nCountry: \(country)")
+                }
+                
+                let userReply = Embed([
+                    "author" : ["name" : profile["personaname"] as! String, "url" : profile["profileurl"] as! String, "icon_url": profile["avatar"] as! String],
+                    "description" : message,
+                    "type" : "rich"
+                    ])
+                
+                
+                completionHandler(userReply)
             }
         }
+    }
+    
+    func getRecentMatches(completionHandler: @escaping (String) -> Void) {
+        
     }
 }
 
@@ -87,24 +98,29 @@ bot.on(.messageCreate) { data in
         msg.reply(with: "Thank you son, glad I can help! bleep-bloop!")
     }
     
-    if text.characters.first! == "!" {
+    if let first = text.characters.first, first == "!" {
         text.remove(at: text.startIndex)
         let args = text.components(separatedBy: " ")
         let cmd = args[0]
         switch cmd {
         case "dota":
             if args.count >= 2 {
-                if args.count == 2 {
-                    if let userName =  UserName(rawValue: args[1].lowercased()) {
-                        let player = Player(userName: userName)
-                        player.getInfo(completionHandler: { (text) in
+                if let userName =  UserName(rawValue: args[1].lowercased()) {
+                    let player = Player(userName: userName)
+                    
+                    if args.count == 2 {
+                        player.getInfo(){ (embed) in
                             DispatchQueue.main.async {
-                                msg.reply(with: text)
+                                msg.reply(with: "Here is some info about:")
+                                msg.reply(with: embed)
                             }
-                        })
+                        }
                     } else {
-                        msg.reply(with: "I don't recornize that name Bro-man, bleep-bloop!")
+                        let userInfo = args[2]
+                        
                     }
+                } else {
+                    msg.reply(with: "I don't recornize that name Bro-man, bleep-bloop!")
                 }
                 
             } else {
