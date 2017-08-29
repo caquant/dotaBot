@@ -7,3 +7,6 @@
 //
 
 import Foundation
+
+let HOST = "https://api.opendota.com/api/"
+let kMaxMatches = 4
