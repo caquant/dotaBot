@@ -21,7 +21,7 @@ bot.on(.messageCreate) { data in
         msg.reply(with: "I'm here if you need me bruh!")
     }
     
-    if text.lowercased() == "nice bro" {
+    if text.lowercased() == "good bot" {
         msg.reply(with: "Thank you son, glad I can help! bleep-bloop!")
     }
     
@@ -31,6 +31,12 @@ bot.on(.messageCreate) { data in
         let cmd = args[0]
         switch cmd {
         case "dota":
+            var replyMsg = "I can give you info about **Dota2**. Here is a list of commands you can try:\n"
+            replyMsg += "!player  [user-name] \t\t\t\t\t\t\t Returns player information.\n!player [user-name] [player-info] \t It returns the information asked in the player info command.\n"
+            replyMsg += "!hero [hero-name]  \t\t\t\t\t\t\t Returns information about a specific hero."
+            msg.reply(with: replyMsg)
+            
+        case "player":
             if args.count >= 2 {
                 if let userName =  UserName(rawValue: args[1].lowercased()) {
                     let player = Player(userName: userName)
@@ -44,6 +50,22 @@ bot.on(.messageCreate) { data in
                         }
                     } else {
                         let userInfo = args[2]
+                        switch userInfo {
+                            case "recent":
+                            player.getRecentMatches(completionHandler: { (embeds) in
+                                DispatchQueue.main.async {
+                                    msg.reply(with: "Here are the last \(kMaxMatches) matches:")
+                                    for anEmbed in embeds {
+                                        msg.reply(with: anEmbed)
+
+                                    }
+                                }
+                            })
+                            
+                        default:
+                            msg.reply(with: "wubba lubba dub dub")
+                            break
+                        }
                         
                     }
                 } else {
@@ -54,6 +76,23 @@ bot.on(.messageCreate) { data in
                 msg.reply(with: "Bruh! I can give you dota info, bleep-bloop!")
             }
             
+        case "hero":
+            if args.count > 1 {
+                var name = args[1]
+                if args.count > 2 {
+                    name += " \(args[2])"
+                }
+                name = name.capitalized
+                
+                if let embed = Heroes.getHeroInfo(name: name) {
+                    msg.reply(with: "Here is some info about that hero:")
+                    msg.reply(with: embed)
+                } else {
+                    msg.reply(with: "I couldn't find a hero with that name, bleep-bloop!")
+                }
+            } else {
+                msg.reply(with: "Hmmm! I think you're missing the name of the hero, bleep-bloop!")
+            }
         default:
             break
         }
